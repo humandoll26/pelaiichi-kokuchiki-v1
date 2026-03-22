@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ペライチ告知機 v1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <header class="panel-header">
+        <h1>ペライチ告知機 v1</h1>
+        <p>A4縦のイベント告知チラシを、その場で作って印刷できます。</p>
+      </header>
+
+      <div class="toolbar">
+        <button type="button" id="loadSample">サンプル読込</button>
+        <button type="button" id="resetForm" class="ghost">初期化</button>
+        <button type="button" id="printFlyer">印刷する</button>
+        <button type="button" id="saveJson" class="ghost">JSON保存</button>
+        <button type="button" id="loadJson" class="ghost">JSON読込</button>
+      </div>
+      <input type="file" id="jsonFileInput" accept=".json,application/json" hidden>
+
+      <section id="fitStatus" class="fit-status" aria-live="polite">
+        <p id="fitStatusText">内容量によってはA4 1ページに収まらない場合があります。必ず「印刷する」から最終表示を確認してください。</p>
+      </section>
+
+      <form id="flyerForm" class="form-grid">
+        <label>
+          <span>タイトル <strong>*</strong></span>
+          <input type="text" name="title" required maxlength="80">
+          <small class="field-note">目安: 10〜28文字程度</small>
+        </label>
+
+        <label>
+          <span>サブタイトル</span>
+          <input type="text" name="subtitle" maxlength="100">
+          <small class="field-note">目安: 12〜36文字程度</small>
+        </label>
+
+        <label>
+          <span>キャッチコピー</span>
+          <input type="text" name="catchcopy" maxlength="120">
+          <small class="field-note">目安: 20〜40文字程度</small>
+        </label>
+
+        <label class="full">
+          <span>メイン画像</span>
+          <input type="file" id="mainImageInput" name="mainImage" accept="image/*">
+          <small class="field-note">推奨最大表示サイズ目安: 2200 × 850 px 前後、横長推奨</small>
+        </label>
+
+        <label>
+          <span>日時 <strong>*</strong></span>
+          <input type="text" name="date" required maxlength="120" placeholder="2026年4月20日（月）18:30開場 / 19:00開演">
+        </label>
+
+        <label>
+          <span>会場 <strong>*</strong></span>
+          <input type="text" name="venue" required maxlength="120">
+        </label>
+
+        <label>
+          <span>料金</span>
+          <input type="text" name="price" maxlength="120">
+        </label>
+
+        <label>
+          <span>主催者名</span>
+          <input type="text" name="organizer" maxlength="120">
+        </label>
+
+        <label class="full">
+          <span>説明文</span>
+          <textarea name="description" rows="5" maxlength="1200"></textarea>
+          <small class="field-note">目安: 80〜220文字程度</small>
+        </label>
+
+        <label class="full">
+          <span>注意事項</span>
+          <textarea name="notes" rows="4" maxlength="800"></textarea>
+          <small class="field-note">目安: 40〜120文字程度</small>
+        </label>
+
+        <label>
+          <span>QRコードURL</span>
+          <input type="url" name="qrUrl" placeholder="https://example.com">
+        </label>
+
+        <label>
+          <span>QRコード下テキスト</span>
+          <input type="text" name="qrText" maxlength="120">
+        </label>
+
+        <label>
+          <span>メールアドレス</span>
+          <input type="text" name="contactEmail" maxlength="160" placeholder="info@example.com">
+          <small class="field-note">目安: 20〜60文字程度</small>
+        </label>
+
+        <label>
+          <span>電話番号</span>
+          <input type="text" name="contactPhone" maxlength="60" placeholder="03-1234-5678">
+          <small class="field-note">目安: 10〜20文字程度</small>
+        </label>
+
+        <label>
+          <span>Xアカウント</span>
+          <input type="text" name="xAccount" maxlength="160" placeholder="@event_x">
+          <small class="field-note">目安: 10〜40文字程度</small>
+        </label>
+
+        <label>
+          <span>Instagramアカウント</span>
+          <input type="text" name="instagramAccount" maxlength="160" placeholder="@event_instagram">
+          <small class="field-note">目安: 10〜40文字程度</small>
+        </label>
+
+        <label>
+          <span>WEBサイト</span>
+          <input type="text" name="website" maxlength="160" placeholder="example.com">
+          <small class="field-note">目安: 10〜40文字程度</small>
+        </label>
+
+      </form>
+    </aside>
+
+    <main class="preview-panel">
+      <div class="preview-toolbar">
+        <span>プレビュー</span>
+        <small>A4 / モノクロ印刷向け</small>
+      </div>
+
+      <section class="paper-frame">
+        <article class="flyer-paper" id="printArea">
+          <header class="flyer-header">
+            <p id="previewSubtitle" class="subtitle hidden"></p>
+            <h2 id="previewTitle">タイトルを入力してください</h2>
+            <p id="previewCatchcopy" class="catchcopy hidden"></p>
+          </header>
+
+          <section id="previewImageSection" class="image-section hidden">
+            <img id="previewImage" alt="イベント画像">
+          </section>
+
+          <section class="info-block">
+            <h3>開催情報</h3>
+            <dl class="info-list">
+              <div id="rowDate" class="info-row">
+                <dt>日時</dt>
+                <dd id="previewDate"></dd>
+              </div>
+              <div id="rowVenue" class="info-row">
+                <dt>会場</dt>
+                <dd id="previewVenue"></dd>
+              </div>
+              <div id="rowPrice" class="info-row hidden">
+                <dt>料金</dt>
+                <dd id="previewPrice"></dd>
+              </div>
+              <div id="rowOrganizer" class="info-row hidden">
+                <dt>主催</dt>
+                <dd id="previewOrganizer"></dd>
+              </div>
+            </dl>
+          </section>
+
+          <section id="descriptionSection" class="content-block hidden">
+            <h3>ご案内</h3>
+            <p id="previewDescription" class="multiline"></p>
+          </section>
+
+          <section class="notes-qr-wrap">
+            <section id="notesSection" class="content-block hidden note-block">
+              <h3>注意事項</h3>
+              <p id="previewNotes" class="multiline"></p>
+            </section>
+
+            <section id="qrSection" class="qr-section hidden">
+              <div class="qr-box">
+                <canvas id="qrCanvas"></canvas>
+              </div>
+              <p id="previewQrText" class="qr-text hidden"></p>
+            </section>
+          </section>
+
+          <footer class="flyer-footer">
+            <p id="previewContact" class="footer-line hidden"></p>
+            <p id="previewSocial" class="footer-line hidden"></p>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

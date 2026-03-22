@@ -426,7 +426,8 @@ textarea {
   }
 
   .app-sidebar,
-  .preview-toolbar {
+  .preview-toolbar,
+  .customize-card {
     display: none !important;
   }
 
